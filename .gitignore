@@ -4,3 +4,7 @@
 */bin/*.app
 */bin/data/*.oni
 */bin/data/openni/lib
+*.mode1v3
+*.pbxuser
+*.xccheckout
+xcuserdata
