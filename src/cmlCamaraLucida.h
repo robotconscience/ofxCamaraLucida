@@ -82,7 +82,9 @@ namespace cml
       ofEvent<ofEventArgs>& render_texture;
       ofEvent<ofEventArgs>& render_3d;
       ofEvent<ofEventArgs>& render_2d;
-
+      
+      Renderer* renderer;
+      
     private:
 
       void init( 
@@ -95,7 +97,6 @@ namespace cml
       cml::Kinect* depth;
       OpticalDevice* proj;
       OpticalDevice* rgb;
-      Renderer* renderer;
       Mesh* mesh;
 
       Config* config;
