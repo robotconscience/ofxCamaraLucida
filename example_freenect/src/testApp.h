@@ -2,7 +2,7 @@
 
 #include "ofMain.h"
 #include "ofxOpenCv.h"
-#include "ofxOpenNI.h"
+#include "ofxKinect.h"
 #include "ofxCamaraLucida.h"
 #include <GLUT/glut.h>
 
@@ -21,8 +21,7 @@ class testApp : public ofBaseApp
     void mouseReleased(int x, int y, int button);
     void windowResized(int w, int h);
 
-    ofxOpenNIContext oni_ctx;
-    ofxDepthGenerator oni_depth_gen;
+    ofxKinect kinect;
 
     cml::CamaraLucida *cml;
 

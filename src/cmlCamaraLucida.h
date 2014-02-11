@@ -26,10 +26,9 @@
 #include "cmlConfig.h"
 #include "cmlEvents.h"
 #include "cmlOpticalDevice.h"
-#include "cmlKinect.h"
+#include "cmlDepthCamera.h"
 #include "cmlCalibration.h"
 #include "cmlMesh.h"
-#include "cmlDepthmap.h"
 #include "cmlRenderer.h"
 
 namespace cml
@@ -38,28 +37,23 @@ namespace cml
   {
     public:
 
-      CamaraLucida(
-          string config_path, 
-          Depthmap* depthmap );
+      CamaraLucida( string cfg_path );
 
       ~CamaraLucida();
 
       void dispose();
       void render();
+      void update( uint16_t *mm_depth_pix );
 
-      void wireframe( bool _wire )
-      {
-        _wireframe = _wire;
-      };
+      void wireframe(bool v) { _wire = v; };
+      bool wireframe() { return _wire; };
 
-      bool wireframe()
-      {
-        return _wireframe;
-      };
+      void gpu(bool v) { _gpu = v; };
+      bool gpu() { return _gpu; };
 
-      void toggle_debug();
       void debug( bool val );
       bool debug();
+      void toggle_debug();
 
       float tex_width();
       float tex_height();
@@ -79,6 +73,25 @@ namespace cml
         return depth->config();
       };
 
+      ofTexture& get_float_tex_ref(
+          uint16_t *mm_depth_pix ) 
+      {
+        return depth->get_float_tex_ref(
+            mm_depth_pix );
+      };
+
+      ofTexture& get_hue_tex_ref(
+          uint16_t *mm_depth_pix ) 
+      {
+        return depth->get_hue_tex_ref(
+            mm_depth_pix );
+      };
+
+      void log()
+      {
+        //mesh->log();
+      };
+
       ofEvent<ofEventArgs>& render_texture;
       ofEvent<ofEventArgs>& render_3d;
       ofEvent<ofEventArgs>& render_2d;
@@ -87,23 +100,26 @@ namespace cml
       
     private:
 
-      void init( 
-          string config_path, 
-          Depthmap* depthmap );
+      bool _gpu;
 
-      Depthmap* depthmap;
+      void update_cpu( uint16_t *mm_depth_pix );
+      void update_gpu( uint16_t *mm_depth_pix );
+
+      void init( string cfg_path );
+
+      ofTexture depth_ftex;
 
       cml::Events events;
-      cml::Kinect* depth;
+      cml::DepthCamera* depth;
       OpticalDevice* proj;
       OpticalDevice* rgb;
       Mesh* mesh;
 
       Config* config;
       ofxXmlSettings xml;
-      string config_path;
+      string cfg_path;
 
-      bool _wireframe;
+      bool _wire;
       bool _debug;
       bool _render_help;
       bool pressed[512];
@@ -136,7 +152,4 @@ namespace cml
       void dispose_events();
   };
 };
-
-
-
 

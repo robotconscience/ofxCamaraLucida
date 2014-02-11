@@ -25,6 +25,7 @@
 #include "cmlConfig.h"
 #include "cmlEvents.h"
 #include "cmlOpticalDevice.h"
+#include "cmlDepthCamera.h"
 #include "cmlMesh.h"
 
 namespace cml
@@ -44,6 +45,8 @@ namespace cml
       void render(
           cml::Events *ev, 
           Mesh *mesh,
+          ofTexture& depth_ftex,
+          bool gpu, 
           bool wireframe );
 
       void dispose();

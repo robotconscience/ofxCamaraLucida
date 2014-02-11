@@ -23,13 +23,12 @@
 
 namespace cml
 {
-  CamaraLucida::CamaraLucida(
-    string config_path, Depthmap* depthmap ) : 
+  CamaraLucida::CamaraLucida(string cfg_path) : 
     render_texture( events.render_texture ),
     render_3d( events.render_3d ),
     render_2d( events.render_2d )
   {
-    init( config_path, depthmap );
+    init( cfg_path );
   };
 
   CamaraLucida::~CamaraLucida(){}; 
@@ -47,22 +46,71 @@ namespace cml
     delete rgb; rgb = NULL;
     delete renderer; renderer = NULL;
     delete mesh; mesh = NULL;
-
-    depthmap = NULL;
   };
 
   void CamaraLucida::render()
-  {
+  { 
     renderer->render( 
-        &events, mesh, wireframe() );
+        &events, 
+        mesh, 
+        depth_ftex,
+        gpu(),
+        wireframe() );
+
     render_screenlog();
     render_help();
   };
-      
+
+  void CamaraLucida::update(
+      uint16_t *mm_depth_pix )
+  {
+    if ( _gpu ) update_gpu( mm_depth_pix );
+    else update_cpu( mm_depth_pix );
+  };
+
+  void CamaraLucida::update_gpu(
+      uint16_t *mm_depth_pix )
+  {
+    depth_ftex = depth->get_float_tex_ref( 
+        mm_depth_pix );
+  };
+
+  void CamaraLucida::update_cpu(
+      uint16_t *mm_depth_pix )
+  {
+
+    int len = mesh->length();
+
+    for ( int i = 0; i < len; i++ )
+    {
+      int xdepth, ydepth, idepth;
+
+      mesh->to_depth( i, 
+          &xdepth, &ydepth, &idepth );
+
+      //uint16_t raw_depth=raw_depth_pix[idepth];
+      //float z = depth->z_mts(raw_depth);
+
+      // mm to mts
+      float zmts = mm_depth_pix[idepth]*0.001;
+      zmts = CLAMP((zmts==0.?5.:zmts),0.,5.);
+
+      float x, y;
+
+      depth->unproject(
+          xdepth, ydepth, zmts, &x, &y );
+
+      mesh->set_vertex( i, x, y, zmts );
+
+    }
+
+    mesh->update();
+  };
+
   void CamaraLucida::toggle_debug()
   {
     debug( ! debug() );
-  };
+  }; 
 
   void CamaraLucida::debug( bool val )
   {
@@ -85,16 +133,16 @@ namespace cml
     return config->tex_height; 
   };
 
-  void CamaraLucida::init( 
-      string config_path, Depthmap* depthmap )
+  void CamaraLucida::init( string cfg_path )
   {
     ofLog(OF_LOG_VERBOSE,
         "cml::CamaraLucida::init");
 
-    this->depthmap = depthmap; 
-    this->config_path = config_path;
+    _gpu = true;
 
-    xml.loadFile(config_path);
+    this->cfg_path = cfg_path;
+
+    xml.loadFile(cfg_path);
     xml.pushTag("camaralucida");
 
     init_keys(); 
@@ -110,7 +158,7 @@ namespace cml
         config, proj_cfg, depth_cfg, rgb_cfg ); 
 
     proj = new OpticalDevice( proj_cfg );
-    depth = new cml::Kinect( depth_cfg );
+    depth = new cml::DepthCamera( depth_cfg );
     rgb = new OpticalDevice( rgb_cfg );
 
     mesh = new Mesh( 
@@ -121,11 +169,12 @@ namespace cml
     renderer = new Renderer(
         config, proj, depth, rgb );
 
-    depthmap->init( depth, mesh );
+    depth_ftex = depth->get_float_tex_ref();
 
-    _wireframe = false;
+    _wire = false;
     _debug = false;
     _render_help = false;
+
   };
 
   void CamaraLucida::init_keys()
@@ -211,7 +260,7 @@ namespace cml
         ofGetWidth(), 25);
     glColor3f(1, 1, 1);
 
-    ofDrawBitmapString( view+" / fps: "+ofToString(fps), 10, ofGetHeight()-10);
+    ofDrawBitmapString( view + " / fps: " + ofToString(fps) + " / gpu " + ofToString(gpu()), 10, ofGetHeight()-10);
 
     ofDisableAlphaBlending(); 
   };
@@ -220,7 +269,7 @@ namespace cml
   {
     if ( ! _render_help ) return;
 
-    string d = "Camara Lucida \n www.camara-lucida.com.ar \n www.chparsons.com.ar \n\n config file = "+config_path+" \n\n debug = "+string(1, key.debug)+" \n\n next viewpoint = "+string(1, key.view_next)+" \n prev viewpoint = "+string(1, key.view_prev)+" \n\n drag mouse to rotate \n\t zoom = "+string(1, key.scene_zoom)+" + drag \n\t reset = "+string(1, key.scene_reset);
+    string d = "Camara Lucida \n www.camara-lucida.com.ar \n www.chparsons.com.ar \n\n config file = "+cfg_path+" \n\n debug = "+string(1, key.debug)+" \n\n next viewpoint = "+string(1, key.view_next)+" \n prev viewpoint = "+string(1, key.view_prev)+" \n\n drag mouse to rotate \n\t zoom = "+string(1, key.scene_zoom)+" + drag \n\t reset = "+string(1, key.scene_reset);
 
     int roff = 200;
     int toff = roff+50;

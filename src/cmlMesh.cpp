@@ -45,8 +45,10 @@ namespace cml
 
     vbo.setVertexData( pts0x(), 3, mesh_len, 
         GL_DYNAMIC_DRAW, sizeof_pts() );
+        //GL_STATIC_DRAW, sizeof_pts() );
 
-    //vbo.setNormalData( normals0x(), mesh_len, GL_DYNAMIC_DRAW, sizeof_normals() );
+    //vbo.setNormalData( normals0x(), mesh_len, 
+      //GL_DYNAMIC_DRAW, sizeof_normals() );
 
     vbo.setIndexData( ibo, 
         ibo_len, GL_STATIC_DRAW );
@@ -67,28 +69,28 @@ namespace cml
   {
     vbo.clear();
     dispose_pts();
-    delete[] ibo; ibo = NULL;
-    delete[] vbo_texcoords; vbo_texcoords = NULL;
-    delete[] vbo_color; vbo_color = NULL;
+    delete[] ibo; ibo=NULL;
+    delete[] vbo_texcoords; vbo_texcoords=NULL;
+    delete[] vbo_color; vbo_color=NULL;
   }
 
   void Mesh::init_ibo()
   {
-    ibo = new uint[ibo_len];
-    for (int i = 0; i < mesh_len; i++) 
+    ibo = new uint[ ibo_len ];
+    for ( int i = 0; i < mesh_len; i++ ) 
     {
       int x_mesh, y_mesh;
       to_mesh_coord( i, &x_mesh, &y_mesh );
 
-      if ( ( x_mesh < width - step ) && 
-          ( y_mesh < height - step ) ) 
+      if ( ( x_mesh < width - step ) 
+          && ( y_mesh < height - step ) ) 
       {
         int ibo_idx = i * 4;
 
-        ibo[ibo_idx+0] = (uint)( y_mesh * width + x_mesh );
-        ibo[ibo_idx+1] = (uint)( (y_mesh + step) * width + x_mesh );
-        ibo[ibo_idx+2] = (uint)( (y_mesh + step) * width + (x_mesh + step) );
-        ibo[ibo_idx+3] = (uint)( y_mesh * width + (x_mesh + step) );
+        ibo[ ibo_idx + 0 ] = (uint)( y_mesh * width + x_mesh );
+        ibo[ ibo_idx + 1 ] = (uint)( (y_mesh + step) * width + x_mesh );
+        ibo[ ibo_idx + 2 ] = (uint)( (y_mesh + step) * width + (x_mesh + step) );
+        ibo[ ibo_idx + 3 ] = (uint)( y_mesh * width + (x_mesh + step) );
       }
     }
   }
@@ -96,7 +98,7 @@ namespace cml
   void Mesh::init_texcoords( 
       int tex_width, int tex_height )
   {
-    vbo_texcoords = new ofVec2f[mesh_len];
+    vbo_texcoords = new ofVec2f[ mesh_len ];
     for (int i = 0; i < mesh_len; i++) 
     {
       int x_mesh, y_mesh;
@@ -105,14 +107,14 @@ namespace cml
       float t = ((float)x_mesh /width) * tex_width;
       float u = ((float)y_mesh /height) * tex_height;
 
-      vbo_texcoords[i] = ofVec2f(t, u);
+      vbo_texcoords[i] = ofVec2f( t, u );
     }
   }
 
   void Mesh::init_colors()
   {
-    vbo_color = new ofFloatColor[mesh_len];
-    for (int i = 0; i < mesh_len; i++) 
+    vbo_color = new ofFloatColor[ mesh_len ];
+    for ( int i = 0; i < mesh_len; i++ ) 
     {
       vbo_color[i] = ofFloatColor(1,1,1,1);
     }
@@ -140,8 +142,8 @@ namespace cml
 
   void Mesh::init_pts()
   {
-    pts3d = new ofVec3f[mesh_len];
-    memset( pts3d, 0, mesh_len*sizeof(ofVec3f) );
+    pts3d = new ofVec3f[ mesh_len ];
+    memset(pts3d, 0, mesh_len*sizeof(ofVec3f));
   }
 
   void Mesh::dispose_pts()

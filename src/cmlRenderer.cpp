@@ -44,8 +44,9 @@ namespace cml
     s.internalformat	= GL_RGBA;
 
     fbo.allocate(s);
-    //shader.load(config->render_shader_path);
 
+    shader.load("camara_lucida/glsl/render");
+ 
     init_gl_scene_control();
   }
 
@@ -64,8 +65,11 @@ namespace cml
   void Renderer::render( 
       cml::Events *ev, 
       Mesh *mesh,
+      ofTexture& depth_ftex,
+      bool gpu, 
       bool wireframe )
   {
+
     // texture
 
     fbo.bind();
@@ -87,11 +91,11 @@ namespace cml
     // 3d
 
     glEnable( GL_DEPTH_TEST );
-    glViewport( 0,0,ofGetWidth(),ofGetHeight() );
+    glViewport(0,0,ofGetWidth(),ofGetHeight());
 
     glPushAttrib( GL_POLYGON_BIT );
     if ( wireframe )
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); 
+      glPolygonMode(GL_FRONT_AND_BACK,GL_LINE); 
     else
       glPolygonMode( GL_FRONT, GL_FILL );
 
@@ -116,19 +120,56 @@ namespace cml
     //glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA); 
     //ofEnableAlphaBlending();
 
-    //shader.begin();
-    fbo.getTextureReference(0).bind();
+    ofTexture render_tex = fbo
+      .getTextureReference(0);
 
-    //shader.setUniform1i("render_tex", 0);
-    //shader.setUniformTexture("normals_tex", mesh->get_normals_tex_ref(), 1);
+    if ( gpu )
+    {
 
+    shader.begin();
+
+    /* shader depth calib */
+    OpticalDevice::Config cfg = depth->config();
+    ofVec4f k = ((cml::DepthCamera*)depth)->k();
+
+    shader.setUniform1f("width", cfg.width);
+    shader.setUniform1f("height", cfg.height);
+    shader.setUniform1f("near", cfg.near);
+    shader.setUniform1f("far", cfg.far);
+    shader.setUniform1f("cx", cfg.cx);
+    shader.setUniform1f("cy", cfg.cy);
+    shader.setUniform1f("fx", cfg.fx);
+    shader.setUniform1f("fy", cfg.fy);
+    shader.setUniform1f("k1", k[0]);
+    shader.setUniform1f("k2", k[1]);
+    shader.setUniform1f("k3", k[2]);
+    shader.setUniform1f("k4", k[3]);
+    /* shader depth calib */
+
+    render_tex.bind();
+
+    shader.setUniformTexture(
+        "render_tex", render_tex, 0 );
+
+    shader.setUniformTexture(
+        "depth_tex", depth_ftex, 1 );
 
     mesh->render();
-    //ofNotifyEvent(ev->render_mesh, ev->void_args);
 
+    render_tex.unbind();
 
-    fbo.getTextureReference(0).unbind();
-    //shader.end();
+    shader.end();
+
+    } 
+    //end of gpu
+
+    else
+    {
+      render_tex.bind();
+      mesh->render();
+      render_tex.unbind();
+    } 
+    //end of cpu
 
     //glDisable(GL_BLEND);
     //ofDisableAlphaBlending(); 

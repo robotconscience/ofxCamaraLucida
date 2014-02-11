@@ -8,17 +8,13 @@ void testApp::setup()
   ofBackground(50);
 
 
-  string rec = "record.oni";
-  if ( ofFile::doesFileExist( rec ) )
-    oni_ctx
-      .setupUsingRecording( ofToDataPath(rec) );
-  else
-    oni_ctx.setup();
-
-  //oni_ctx.setupUsingXMLFile();
-  oni_depth_gen.setup( &oni_ctx );
-  oni_ctx.registerViewport();
-	//oni_ctx.toggleMirror();
+  kinect.setRegistration(false);
+  //kinect.setDepthMode( FREENECT_DEPTH_11BIT );
+  kinect.setDepthClipping(500, 4000); //mm (50cm - 4mt)
+  kinect.enableDepthNearValueWhite(false);
+  // ir:false, rgb:false, texture:true
+  kinect.init(false, false, true);
+  kinect.open();
 
 
   string cfg = ofToDataPath("camara_lucida/config.xml");
@@ -38,12 +34,13 @@ void testApp::setup()
 
 void testApp::update() 
 {	
-  oni_ctx.update();
-  oni_depth_gen.update();
+  if ( ! kinect.isConnected() )
+    return;
 
-  uint16_t *mm_depth_pix = (uint16_t*)oni_depth_gen.getXnDepthGenerator().GetDepthMap(); 
+  kinect.update();
 
-  cml->update( mm_depth_pix );
+  if ( kinect.isFrameNew() )
+    cml->update( kinect.getRawDepthPixels() );
 }
 
 void testApp::draw() 
@@ -68,7 +65,11 @@ void testApp::render_texture(ofEventArgs &args)
 
   glColor3f(1, 1, 1);
 
-  oni_depth_gen.draw( 0, 0, w, h );
+  //kinect.drawDepth(0, 0, w, h);
+
+  cml->get_hue_tex_ref(
+      kinect.getRawDepthPixels() )
+    .draw( 0, 0, w, h );
 
   glColor3f(1, 1, 0);
   ofCircle(800, 200, 60);
@@ -77,7 +78,7 @@ void testApp::render_texture(ofEventArgs &args)
 void testApp::render_3d(ofEventArgs &args)
 {
   glScalef( 1., -1., 1. );	
-  glTranslatef(-0.3, 0.3, 1);
+  glTranslatef( -0.3, 0.3, 1. );
   glColor3f(1, 1, 1);
   glutWireTeapot(0.1);
 }
@@ -86,7 +87,7 @@ void testApp::render_2d(ofEventArgs &args)
 {
   ofSetColor(255, 255, 255);
 
-  oni_depth_gen.draw( 0, 0, 200, 150 );
+  kinect.drawDepth(0, 0, 200, 150);
 
   ofDrawBitmapString("press h for help",10,10);
 }
@@ -106,7 +107,7 @@ void testApp::exit()
 
   cml->dispose();
 
-  oni_ctx.shutdown();
+  kinect.close();
 }
 
 void testApp::keyPressed (int key) 
@@ -122,6 +123,10 @@ void testApp::keyPressed (int key)
       cml->wireframe( ! cml->wireframe() );
       break;
 
+    case 'e':
+      kinect.enableDepthNearValueWhite(!kinect.isDepthNearValueWhite());
+      break;
+
     case 'f':
       ofToggleFullscreen();
       break;
@@ -129,7 +134,6 @@ void testApp::keyPressed (int key)
     case 'p':
       ofSetWindowPosition( ofGetWindowPositionX() == 0 ? 1440 : 0, 0 );
       break;
-
   }
 }
 
