@@ -43,7 +43,7 @@ namespace cml
 
       void dispose();
       void render();
-      void update( uint16_t *mm_depth_pix );
+      void update( uint16_t *mm_depth_pix, bool smooth = false );
 
       void wireframe(bool v) { _wire = v; };
       bool wireframe() { return _wire; };
@@ -96,6 +96,12 @@ namespace cml
       ofEvent<ofEventArgs>& render_3d;
       ofEvent<ofEventArgs>& render_2d; 
 
+      // accessors
+      Renderer * getRenderer();
+      DepthCamera * getDepthCamera();
+      Config * getConfig();
+      Mesh * getMesh();
+      
     private:
 
       bool _gpu;

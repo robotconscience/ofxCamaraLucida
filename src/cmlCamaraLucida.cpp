@@ -61,9 +61,98 @@ namespace cml
     render_help();
   };
 
-  void CamaraLucida::update(
-      uint16_t *mm_depth_pix )
-  {
+  void CamaraLucida::update( uint16_t *mm_depth_pix, bool smooth )
+    {
+      // credit to james alliban!
+      //http://forum.openframeworks.cc/t/smooth-er-point-cloud-with-ofxkinect/10118/5
+      if ( smooth ){
+          int w = getDepthCamera()->width();
+          int h = getDepthCamera()->height();
+          float meshBlurRadius = 3.0;
+          float zDifferencingAveragingMin = 10.0f;
+          
+          int len = mesh->length();
+          
+          uint16_t * hozontalBlurred = mm_depth_pix;
+          int nAveraged = 0;
+          
+          for ( int j = 0; j < len; j++ )
+          {
+              int xdepth, ydepth, idepth;
+              
+              mesh->to_depth( j, &xdepth, &ydepth, &idepth );
+              
+              if (mm_depth_pix[idepth] > ofMap(getDepthCamera()->config().near, 0, 255, 0, 10000)
+                  && mm_depth_pix[idepth] < ofMap(getDepthCamera()->config().far, 0, 255, 0, 10000))
+              {
+                  
+                  float average = hozontalBlurred[idepth];
+                  int averageCount = 1;
+                  for (int i = 1; i < meshBlurRadius; i++)
+                  {
+                      if (idepth - i > 0)
+                      {
+                          if (abs(hozontalBlurred[idepth] - mm_depth_pix[idepth - i]) < zDifferencingAveragingMin)
+                          {
+                              ++averageCount;
+                              average += mm_depth_pix[idepth - i];
+                          }
+                      }
+                      if (idepth + i < w * h)
+                      {
+                          if (abs(mm_depth_pix[idepth] - mm_depth_pix[idepth + i]) < zDifferencingAveragingMin)
+                          {
+                              ++averageCount;
+                              average += mm_depth_pix[idepth + i];
+                          }
+                      }
+                  }
+                  average /= averageCount;
+                  hozontalBlurred[idepth] = average;
+                  nAveraged += averageCount;
+              }
+          }
+          
+          uint16_t * vertBlurred = hozontalBlurred;
+          
+          for ( int j = 0; j < len; j++ )
+          {
+              int xdepth, ydepth, idepth;
+              
+              mesh->to_depth( j, &xdepth, &ydepth, &idepth );
+              
+              if (mm_depth_pix[idepth] > ofMap(getDepthCamera()->config().near, 0, 255, 0, 10000)
+                  && mm_depth_pix[idepth] < ofMap(getDepthCamera()->config().far, 0, 255, 0, 10000))
+              {
+                  float average = hozontalBlurred[idepth];
+                  int averageCount = 1;
+                  for (int i = 1; i < meshBlurRadius; i++)
+                  {
+                      if (idepth - (w * i) > 0)
+                      {
+                          if (abs(hozontalBlurred[idepth] - hozontalBlurred[idepth - (w * i)]) < zDifferencingAveragingMin)
+                          {
+                              ++averageCount;
+                              average += hozontalBlurred[idepth - i];
+                          }
+                      }
+                      if (idepth + (w * i) < w * h)
+                      {
+                          if (abs(mm_depth_pix[idepth] - hozontalBlurred[idepth + (w * i)]) < zDifferencingAveragingMin)
+                          {
+                              ++averageCount;
+                              average += hozontalBlurred[idepth + i];
+                          }
+                      }
+                  }
+                  average /= averageCount;
+                  vertBlurred[idepth] = average;
+              }
+          }
+          
+          std::swap(vertBlurred, mm_depth_pix);
+      }
+      
     if ( _gpu ) update_gpu( mm_depth_pix );
     else update_cpu( mm_depth_pix );
   };
@@ -313,6 +402,23 @@ namespace cml
     ofRemoveListener(ofEvents().mousePressed, 
         this, &CamaraLucida::mousePressed);
   };
+    
+    // Brett Renfer: Added 3/6/14
+    
+    Renderer * CamaraLucida::getRenderer(){
+        return renderer;
+    }
+    DepthCamera * CamaraLucida::getDepthCamera(){
+        return depth;
+    }
+    
+    Config * CamaraLucida::getConfig(){
+        return config;
+    }
+    
+    Mesh * CamaraLucida::getMesh(){
+        return mesh;
+    }
 };
 
 
