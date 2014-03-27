@@ -117,7 +117,7 @@ namespace cml
         return _RT; 
       };
 
-      OpticalDevice::Config config() 
+      OpticalDevice::Config & config()
       { 
         return cfg; 
       };

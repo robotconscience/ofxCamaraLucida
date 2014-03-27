@@ -35,9 +35,9 @@ namespace cml
             "mesh_step", 2);
 
         tex_width = xml->getValue(
-            "texture:width", 1024);
+            "texture:width", 1920);
         tex_height = xml->getValue(
-            "texture:height", 768);
+            "texture:height", 1080);
         tex_nsamples = xml->getValue(
             "texture:num_samples", 1);
 

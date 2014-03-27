@@ -34,7 +34,7 @@ namespace cml
     this->rgb = rgb;
 
     _debug = false;
-    _viewpoint = V_DEPTH;
+    _viewpoint = V_PROJ;
 
     ofFbo::Settings s;
     s.width			    = config->tex_width;
@@ -125,7 +125,7 @@ namespace cml
 
     if ( gpu )
     {
-
+        
     shader.begin();
 
     /* shader depth calib */
@@ -159,7 +159,7 @@ namespace cml
     render_tex.unbind();
 
     shader.end();
-
+        
     } 
     //end of gpu
 
@@ -173,8 +173,8 @@ namespace cml
 
     //glDisable(GL_BLEND);
     //ofDisableAlphaBlending(); 
-
-    ofNotifyEvent(ev->render_3d, ev->void_args);
+      
+      ofNotifyEvent(ev->render_3d, ev->void_args);
 
     // 2d hud
 
